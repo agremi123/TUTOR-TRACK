@@ -1,0 +1,1 @@
+                   <span className="text-xs font-bold text-slate-600 hidden xl:inline">{user.displayName?.split(' ')[0]}</span>

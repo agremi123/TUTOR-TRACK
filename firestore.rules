@@ -1,0 +1,111 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: /users/{userId}/students/{studentId}
+    // Fields:
+    //   - name: string (required)
+    //   - phone: string
+    //   - email: string
+    //   - rate: number
+    //   - level: string
+    //   - teacherId: string (required)
+    //   - attendance: map
+    //   - payments: list
+    //   - isHidden: bool
+    //   - debtSettled: number
+    //   - updatedAt: timestamp
+    //
+    // Collection: /users/{userId}/teachers/{teacherId}
+    // Fields:
+    //   - name: string (required)
+    //   - color: string (required)
+    //
+    // Collection: /users/{userId}/settings/main
+    // Fields:
+    //   - tutorTrackCalendarId: string
+    //   - googleEmail: string
+    //
+    // Collection: /users/{userId}/receipts/{receiptId}
+    // Fields:
+    //   - studentId: string
+    //   - fileName: string
+    //   - amount: number
+    //   - date: timestamp
+    //   - status: string
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "contact@kruremi.com" && request.auth.token.email_verified == true);
+    }
+
+    function isValidStudent(data) {
+      return data.keys().hasAll(['name', 'teacherId']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.teacherId is string;
+    }
+
+    function isValidTeacher(data) {
+      return data.keys().hasAll(['name', 'color']) &&
+             data.name is string && data.name.size() > 0 &&
+             data.color is string;
+    }
+
+    function isValidReceipt(data) {
+      return data.keys().hasAll(['studentId', 'amount', 'status']) &&
+             data.studentId is string &&
+             data.amount is number &&
+             data.status in ['pending', 'verified', 'rejected'];
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId) || isAdmin();
+
+      match /students/{studentId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin()) && isValidStudent(request.resource.data);
+      }
+
+      match /teachers/{teacherId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin()) && isValidTeacher(request.resource.data);
+      }
+
+      match /settings/main {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /receipts/{receiptId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+        allow create, update: if (isOwner(userId) || isAdmin()) && isValidReceipt(request.resource.data);
+      }
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

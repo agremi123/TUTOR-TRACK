@@ -1,0 +1,121 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "A student managed by the tutor",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "rate": { "type": "number" },
+        "level": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "attendance": { "type": "object", "description": "Map of date keys to attendance entries" },
+        "payments": { "type": "array", "description": "List of payment objects" },
+        "isHidden": { "type": "boolean" },
+        "debtSettled": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "teacherId"]
+    },
+    "Teacher": {
+      "title": "Teacher",
+      "description": "A teacher in the system",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["name", "color"]
+    },
+    "UserSettings": {
+      "title": "User Settings",
+      "description": "Application settings for the user",
+      "type": "object",
+      "properties": {
+        "tutorTrackCalendarId": { "type": "string" },
+        "googleEmail": { "type": "string" },
+        "pinnedNote": { "type": "string" },
+        "pinnedNoteUpdatedAt": { "type": "string", "format": "date-time" },
+        "tasksToday": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/Task" }
+        },
+        "tasksTomorrow": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/Task" }
+        },
+        "tasksLater": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/Task" }
+        },
+        "ongoingProjects": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Project" }
+        },
+        "recurringTaskTemplates": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "lastChecklistReset": { "type": "string" },
+        "tasks": { 
+          "type": "array", 
+          "items": { "$ref": "#/definitions/Task" }
+        }
+      }
+    },
+    "Task": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "text": { "type": "string" },
+        "isDone": { "type": "boolean" },
+        "priority": { "type": "string", "enum": ["urgent", "normal"] },
+        "createdAt": { "type": "number" }
+      }
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "on-hold", "completed"] },
+        "urgency": { "type": "number", "description": "Ranking of project priority (1 is highest)" },
+        "createdAt": { "type": "number" }
+      }
+    },
+    "Receipt": {
+      "title": "Receipt",
+      "description": "A payment receipt screenshot analysis",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "verified", "rejected"] },
+        "lessonDate": { "type": "string", "description": "Associated lesson date key" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}/students/{studentId}": {
+      "schema": "Student",
+      "description": "Student records for a specific user"
+    },
+    "/users/{userId}/teachers/{teacherId}": {
+      "schema": "Teacher",
+      "description": "Teacher records for a specific user"
+    },
+    "/users/{userId}/settings/main": {
+      "schema": "UserSettings",
+      "description": "Main settings for the user"
+    },
+    "/users/{userId}/receipts/{receiptId}": {
+      "schema": "Receipt",
+      "description": "Receipt records for a specific user"
+    }
+  }
+}
